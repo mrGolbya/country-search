@@ -1,4 +1,4 @@
-import { HttpError } from '../errors/HttpError';
+import { HttpError } from '../errors/HttpError.js';
 
 export type SearchErrorType = 'aborted' | 'timeout' | 'http' | 'network';
 
