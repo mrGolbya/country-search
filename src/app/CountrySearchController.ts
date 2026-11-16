@@ -3,8 +3,11 @@ import {
   classifySearchError,
   type SearchErrorType,
 } from '../utils/classifySearchError.js';
+import { AsyncRequestCache } from '../utils/cache.js';
 import { debounce } from '../utils/debounce.js';
 import { mapCountryResponse } from '../utils/mapCountryResponse.js';
+
+const countrySearchCache = new AsyncRequestCache(searchCountries);
 
 type CountryCardData = ReturnType<typeof mapCountryResponse>;
 
@@ -162,7 +165,7 @@ export class CountrySearchController {
     ]);
 
     try {
-      const rawCountries = await searchCountries(query, signal);
+      const rawCountries = await countrySearchCache.get(query, signal);
       if (this.activeController !== controller) {
         return;
       }
