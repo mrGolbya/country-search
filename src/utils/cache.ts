@@ -15,6 +15,7 @@ function createAbortError(): DOMException {
 function waitForCaller<T>(
   promise: Promise<T>,
   signal: AbortSignal,
+  onSettled?: () => void,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     if (signal.aborted) {
@@ -25,6 +26,7 @@ function waitForCaller<T>(
     let settled = false;
     const cleanup = () => {
       signal.removeEventListener('abort', handleAbort);
+      onSettled?.();
     };
     const handleAbort = () => {
       if (settled) {
@@ -113,7 +115,7 @@ export class AsyncRequestCache<T> {
     request.subscribers += 1;
     const activeRequest = request;
 
-    return waitForCaller(activeRequest.promise, signal).finally(() => {
+    return waitForCaller(activeRequest.promise, signal, () => {
       activeRequest.subscribers -= 1;
       if (
         activeRequest.subscribers === 0 &&
