@@ -1,12 +1,12 @@
-import { HttpError } from '../errors/HttpError';
+import { HttpError } from '../errors/HttpError.js';
 
 export async function searchCountries(
   query: string,
-  signal: AbortSignal
+  signal: AbortSignal,
 ): Promise<unknown[]> {
   const response = await fetch(
     `https://countries.dev/name/${encodeURIComponent(query)}`,
-    { signal }
+    { signal },
   );
 
   if (response.status === 404) {
