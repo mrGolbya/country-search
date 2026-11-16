@@ -52,6 +52,41 @@ describe('AsyncRequestCache', () => {
     expect(loader).toHaveBeenCalledTimes(1);
   });
 
+  it('aborts the shared request when its final caller aborts', async () => {
+    const requestSignals: AbortSignal[] = [];
+    const loader = vi.fn((_query: string, signal: AbortSignal) => {
+      requestSignals.push(signal);
+      return new Promise<string[]>((_resolve, reject) => {
+        signal.addEventListener(
+          'abort',
+          () => reject(signal.reason),
+          { once: true },
+        );
+      });
+    });
+    const cache = new AsyncRequestCache(loader);
+    const firstController = new AbortController();
+    const first = cache.get('spain', firstController.signal);
+
+    await Promise.resolve();
+    const firstRejection = expect(first).rejects.toMatchObject({
+      name: 'AbortError',
+    });
+    firstController.abort();
+
+    const abortedSynchronously = requestSignals[0]?.aborted;
+    await firstRejection;
+    expect(abortedSynchronously).toBe(true);
+
+    const secondController = new AbortController();
+    const second = cache.get('spain', secondController.signal);
+    await Promise.resolve();
+    expect(loader).toHaveBeenCalledTimes(2);
+    expect(requestSignals[1]?.aborted).toBe(false);
+    secondController.abort();
+    await expect(second).rejects.toMatchObject({ name: 'AbortError' });
+  });
+
   it('does not cache failed requests', async () => {
     const loader = vi
       .fn<(_query: string, signal: AbortSignal) => Promise<string[]>>()
